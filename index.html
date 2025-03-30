@@ -88,9 +88,26 @@
       font-size: 1rem;
       cursor: pointer;
     }
+    #toast {
+      display: none;
+      background: #4CAF50;
+      color: white;
+      padding: 1em 2em;
+      border-radius: 8px;
+      position: fixed;
+      top: 120px;       /* ✅ トップに表示 */
+      bottom: auto;    /* 🔄 下の設定は消す */
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 999;
+      font-size: 1rem;
+    }
   </style>
 </head>
 <body>
+  <div id="toast">送信しました！</div>
+
   <div class="date-wrapper">
     <span id="dateDisplay" class="date-display"></span>
     <input type="date" id="dateInput" class="date-input">
@@ -211,8 +228,15 @@
     generateTimeOptions();
     setInitialDateTime();
 
-    // ✅ GAS連携（フォーム形式 + no-cors）
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyBEzJq4Ue01B1E6tuuC2rGyXsxQClwb8rVzy-SzwK_UbywB6fBo0X4KFFDUaz8fmP1/exec";
+    
+    function showToast() {
+      const toast = document.getElementById("toast");
+      toast.style.display = "block";
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 2000);
+    }
 
     document.querySelector(".button").addEventListener("click", () => {
       const date = dateInput.value;
@@ -234,6 +258,8 @@
         mode: "no-cors",
         body: params
       });
+
+      showToast();
     });
   </script>
 </body>
