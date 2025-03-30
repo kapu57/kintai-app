@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>勤怠管理</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+    }
+    .date-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 1em;
+      margin-bottom: 0.5em;
+    }
+    .date-display {
+      font-size: 1.2rem;
+      color: #555;
+    }
+    .date-input {
+      font-size: 1.2rem;
+      padding: 0.4em;
+      border-radius: 0.4em;
+      border: 1px solid #ccc;
+      display: none;
+    }
+    .time-row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5em;
+      margin-bottom: 0.5em;
+    }
+    .time-display-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .time-text, .time-select {
+      font-size: 2.25rem;
+      font-weight: bold;
+    }
+    .time-select {
+      padding: 0.2em 0.4em;
+      border-radius: 0.4em;
+      border: 1px solid #ccc;
+      display: none;
+      appearance: none;
+      background-color: white;
+    }
+    .edit-button, .view-button, .plus-button, .minus-button {
+      background-color: #ccc;
+      border: none;
+      border-radius: 0.4em;
+      padding: 0.4em 1em;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .view-button {
+      display: none;
+      order: -1;
+    }
+    textarea {
+      width: 80vw;
+      max-width: 400px;
+      height: 4em;
+      margin-bottom: 1em;
+      font-size: 1rem;
+      padding: 0.5em;
+      border-radius: 0.5em;
+      border: 1px solid #ccc;
+      resize: none;
+    }
+    .button {
+      background-color: green;
+      color: white;
+      padding: 0.7em 1.5em;
+      border: none;
+      border-radius: 0.5em;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="date-wrapper">
+    <span id="dateDisplay" class="date-display"></span>
+    <input type="date" id="dateInput" class="date-input">
+  </div>
+
+  <div class="time-row">
+    <div class="time-display-wrapper">
+      <button class="edit-button" id="editBtn">編集</button>
+      <button class="view-button" id="viewBtn">閲覧</button>
+      <div id="timeDisplay" class="time-text"></div>
+      <select id="timeSelect" class="time-select"></select>
+      <button class="minus-button" id="minusBtn">-</button>
+      <button class="plus-button" id="plusBtn">+</button>
+    </div>
+  </div>
+
+  <textarea id="text1" placeholder="テキスト1を入力..."></textarea>
+  <textarea id="text2" placeholder="テキスト2を入力..."></textarea>
+
+  <button class="button">送信</button>
+
+  <script>
+    const dateInput = document.getElementById("dateInput");
+    const dateDisplay = document.getElementById("dateDisplay");
+    const timeSelect = document.getElementById("timeSelect");
+    const timeDisplay = document.getElementById("timeDisplay");
+    const editBtn = document.getElementById("editBtn");
+    const viewBtn = document.getElementById("viewBtn");
+    const plusBtn = document.getElementById("plusBtn");
+    const minusBtn = document.getElementById("minusBtn");
+
+    function formatDateWithWeekday(date) {
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      const d = new Date(date);
+      const weekday = days[d.getDay()];
+      return `${d.getMonth() + 1}月${d.getDate()}日（${weekday}）`;
+    }
+
+    function updateDateDisplay() {
+      dateDisplay.textContent = formatDateWithWeekday(dateInput.value);
+    }
+
+    dateInput.addEventListener('change', updateDateDisplay);
+
+    function generateTimeOptions() {
+      for (let h = 0; h < 24; h++) {
+        ["00", "15", "30", "45"].forEach(min => {
+          const time = `${String(h).padStart(2, '0')}:${min}`;
+          const option = document.createElement("option");
+          option.value = time;
+          option.textContent = time;
+          timeSelect.appendChild(option);
+        });
+      }
+    }
+
+    function setInitialDateTime() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+      dateInput.value = dateStr;
+      updateDateDisplay();
+
+      const hh = String(now.getHours()).padStart(2, '0');
+      const min = now.getMinutes();
+      const roundedMin = min < 15 ? "00" : min < 30 ? "15" : min < 45 ? "30" : "45";
+      const timeValue = `${hh}:${roundedMin}`;
+      timeSelect.value = timeValue;
+      timeDisplay.textContent = timeValue;
+
+      const selectedIndex = timeSelect.selectedIndex;
+      const optionHeight = 30;
+      timeSelect.scrollTop = selectedIndex * optionHeight - timeSelect.clientHeight / 2;
+    }
+
+    function shiftTime(minutesDelta) {
+      const [hh, mm] = timeDisplay.textContent.split(":");
+      let totalMinutes = parseInt(hh) * 60 + parseInt(mm) + minutesDelta;
+      if (totalMinutes < 0) totalMinutes += 24 * 60;
+      if (totalMinutes >= 24 * 60) totalMinutes -= 24 * 60;
+      const newH = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+      const newM = String(totalMinutes % 60).padStart(2, '0');
+      const newTime = `${newH}:${newM}`;
+      timeDisplay.textContent = newTime;
+      timeSelect.value = newTime;
+    }
+
+    editBtn.addEventListener("click", () => {
+      timeSelect.style.display = "inline-block";
+      timeDisplay.style.display = "none";
+      editBtn.style.display = "none";
+      viewBtn.style.display = "inline-block";
+      dateInput.style.display = "inline-block";
+      dateDisplay.style.display = "none";
+      timeSelect.focus();
+    });
+
+    viewBtn.addEventListener("click", () => {
+      timeDisplay.textContent = timeSelect.value;
+      timeSelect.style.display = "none";
+      timeDisplay.style.display = "block";
+      editBtn.style.display = "inline-block";
+      viewBtn.style.display = "none";
+      dateInput.style.display = "none";
+      dateDisplay.style.display = "inline-block";
+      updateDateDisplay();
+    });
+
+    timeSelect.addEventListener("change", () => {
+      timeDisplay.textContent = timeSelect.value;
+    });
+
+    plusBtn.addEventListener("click", () => shiftTime(15));
+    minusBtn.addEventListener("click", () => shiftTime(-15));
+
+    generateTimeOptions();
+    setInitialDateTime();
+
+    // ✅ GAS連携（フォーム形式 + no-cors）
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyBEzJq4Ue01B1E6tuuC2rGyXsxQClwb8rVzy-SzwK_UbywB6fBo0X4KFFDUaz8fmP1/exec";
+
+    document.querySelector(".button").addEventListener("click", () => {
+      const date = dateInput.value;
+      const time = timeDisplay.textContent.trim();
+      const text1 = document.getElementById("text1").value.trim();
+      const text2 = document.getElementById("text2").value.trim();
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      const day = days[new Date(date).getDay()];
+
+      const params = new URLSearchParams();
+      params.append("date", date);
+      params.append("day", day);
+      params.append("time", time);
+      params.append("text1", text1);
+      params.append("text2", text2);
+
+      fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: params
+      });
+    });
+  </script>
+</body>
+</html>
